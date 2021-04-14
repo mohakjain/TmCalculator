@@ -3,12 +3,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import jaligner.Alignment;
-import jaligner.Sequence;
-import jaligner.SmithWatermanGotoh;
-import jaligner.matrix.Matrix;
-import jaligner.matrix.MatrixLoader;
+// import jaligner.Alignment;
+// import jaligner.Sequence;
+// import jaligner.SmithWatermanGotoh;
+// import jaligner.matrix.Matrix;
+// import jaligner.matrix.MatrixLoader;
 import java.util.ArrayList;
+
+/**
+ * author @mohakjain
+ * 
+ */
+
 
 public class TmCalculator {
 
@@ -17,8 +23,7 @@ public class TmCalculator {
     }
 
     public double run(char[] S1, char[] S2) throws IOException, InterruptedException {
-        // double Tm = 0.0;
-        // return Tm;
+      
         String path_to_melting_executable = "./MELTING5.2.0/executable/";
         
         String[] meltingArgs = {"java", "-jar", "melting5.jar",
@@ -29,32 +34,33 @@ public class TmCalculator {
                                 "Na=0.05", 
                                 "-C", String.valueOf(S2)
                             };
-        System.out.println(meltingArgs);
         
         ProcessBuilder pb = new ProcessBuilder(meltingArgs);
         pb.directory(new File(path_to_melting_executable));
         Process proc = pb.start();
         proc.waitFor();
-        // Then retreive the process output
+        // Then retrieve the process output
         
         InputStream in = proc.getInputStream();
         InputStream err = proc.getErrorStream();
         
-       
-
         byte results[]=new byte[in.available()];
         in.read(results, 0, results.length);        
-        // System.out.println(new String(results));
+        System.out.println(new String(results));
         
         byte c[]=new byte[err.available()];
         err.read(c,0,c.length);
         System.out.println(new String(c));
         
 
-
         String Tm_str = new String(Arrays.copyOfRange(results,  results.length-22, results.length-13));
         while ( !Character.isDigit(Tm_str.charAt(0)) ) {
             Tm_str = Tm_str.substring(1, Tm_str.length());
+        }
+
+        if (Tm_str.length() == 0){
+            System.out.println("Encountered fatal error!!");
+            return 0.0;
         }
 
         double Tm = Double.parseDouble(Tm_str);
@@ -65,7 +71,6 @@ public class TmCalculator {
     public static char[] complement(char[] S) {
         
         char[] S_comp = S.clone();
-
         for (int i = 0; i < S.length; i++) {
             if (S[i] == 'A') {
                 S_comp[i] = 'T';
@@ -88,19 +93,23 @@ public class TmCalculator {
     }
 
     public static void main(String[] args) throws Exception {
-        String s1 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".toUpperCase();  
-        String s2 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".toUpperCase();
+        String s1 = "aaaaaaaaaa-aaaaaaaaaaaaaGAaaaaaaa".toUpperCase();  
+        String s2 = "aaaaaaaaaaaaaaaaaaaaaaaaTaaaaaaaa".toUpperCase();
 
-        Sequence seq1 = new Sequence(s1);
-        Sequence seq2 = new Sequence(s2);
+        // // below deals with jaligner stuff.
+        // Sequence seq1 = new Sequence(s1);
+        // Sequence seq2 = new Sequence(s2);
 
-        Alignment alignment = SmithWatermanGotoh.align(seq1, seq2, MatrixLoader.load("EDNAFULL_1"), 10f, 0.5f);
+        // Alignment alignment = SmithWatermanGotoh.align(seq1, seq2, MatrixLoader.load("EDNAFULL_1"), 10f, 0.5f);
         
-        Matrix matrix = alignment.getMatrix();
+        // Matrix matrix = alignment.getMatrix();
 
-        char[] S1 = alignment.getSequence1();
-        char[] S2 = alignment.getSequence2();
-        
+        // char[] S1 = alignment.getSequence1();
+        // char[] S2 = alignment.getSequence2();
+
+        // comment out below when you can figure out the jaligner stuff:
+        char[] S1 = s1.toCharArray(); 
+        char[] S2 = s2.toCharArray();
         
         // Complement S2 because that's what MELTING likes:
         S2 = complement(S2);
