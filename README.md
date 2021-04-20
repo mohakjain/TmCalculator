@@ -2,10 +2,15 @@
 
 Currently:
 
+Found some test cases; implemented a thing that switches which nearest-neighbor model MELTING uses to crunch these melting temps. Seems to work pretty well. More test cases would be nice though. 
+
+
+Last week:
+
 jaligner issue is fixed. We now have a totally working model. I'm going to look for feedback and test cases before wrapping this thing up.
 
 
-Last week: 
+Earlier: 
 
 This should in theory work, but I have no easy way of testing the jaligner functionality that the TmCalculator's previous version used. Once I have some idea of how to approach this, I can test my implementation further. As it stands, we use the MELTING 5.2.0 jar to calculate the melting temperature for the input DNA duplex.
 
