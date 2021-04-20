@@ -8,10 +8,10 @@ import jaligner.Sequence;
 import jaligner.SmithWatermanGotoh;
 import jaligner.matrix.Matrix;
 import jaligner.matrix.MatrixLoader;
-import java.util.ArrayList;
+import jaligner.matrix.MatrixLoaderException;
 
 /**
- * author @mohakjain
+ * @author mohakjain
  * 
  */
 
@@ -23,22 +23,48 @@ public class TmCalculator {
     }
 
     /** Run my temperature checker. 
-     * We take in char[] inputs as the sequence and complementary sequence.
+     * We take in char[] inputs as the sequence and reverse strand sequence (3'-5').
+     * @throws MatrixLoaderException
     */
-    public double run(char[] S1, char[] S2) throws IOException, InterruptedException {
-      
+    public double run(char[] S1, char[] S2) throws IOException, InterruptedException, MatrixLoaderException {
+
+        String s1 = String.valueOf(S1);
+        String s2 = String.valueOf(S2);
+        
+        if (!s1.equals(s2)) {
+            Sequence seq1 = new Sequence(s1);
+            Sequence seq2 = new Sequence(s2);
+            Alignment alignment = SmithWatermanGotoh.align(seq1, seq2, MatrixLoader.load("EDNAFULL_1"), 10f, 0.5f);
+            S1 = alignment.getSequence1();
+            S2 = alignment.getSequence2();
+        }
+
+        // Complement S2 because that's what MELTING likes:
+        S2 = complement(S2);
+
+        // Print what the alignments actually look like:
+        System.out.println(S1);
+        System.out.println(S2);
+
         // We specify the location of the folder containing the MELTING5 jar.
         String path_to_melting_executable = "./MELTING5.2.0/executable/";
         
+        // String[] nnms = {"all97", "bre86", "san04", "san96", "sug96", "tan04"}; 
+        double Tm = 0.0;
 
+        String nnm = choose_model(S1); 
+
+       // for (String nnm : nnms) {
+        
         // I was unable to determine how to run the melting5 jar as a library. 
         // As such I decided to take this approach which calls the jar file using a java process.
         String[] meltingArgs = {"java", "-jar", "melting5.jar",
                                 "-S",  String.valueOf(S1),
                                 "-H", "dnadna",
-                                "-P", "50e-8",
-                                "-E", "Na=0.05", 
-                                "-C", String.valueOf(S2)
+                                "-P", "5e-7",
+                                "-E", "Na=.05", 
+                                "-C", String.valueOf(S2),
+                                "-nn", nnm
                             };
         // Arguments above are all defaults. 500nm primer concentration, Na=0.05 looks like the default too.
 
@@ -55,12 +81,12 @@ public class TmCalculator {
         // print out the outputs from MELTING5
         byte results[]=new byte[in.available()];
         in.read(results, 0, results.length);        
-        System.out.println(new String(results));
+        // System.out.println(new String(results));
         
         // print out any errors from MELTING5; Not sure if this is necessary.
         byte c[]=new byte[err.available()];
         err.read(c,0,c.length);
-        System.out.println(new String(c));
+        // System.out.println(new String(c));
         
         // Process MELTING5's output string:
         String Tm_str = new String(Arrays.copyOfRange(results,  results.length-22, results.length-13));
@@ -77,8 +103,16 @@ public class TmCalculator {
         }
 
         // Return as double the melting temperature.
-        double Tm = Double.parseDouble(Tm_str);
+        Tm = Double.parseDouble(Tm_str);
         
+        System.out.println(nnm);
+        System.out.println(Tm);
+
+    // }
+
+
+
+
         return Tm;
     }
 
@@ -110,38 +144,61 @@ public class TmCalculator {
         return S_comp;
     }
 
+    /** From the char[] sequence, choose which nearest-neighbor model to use:  */
+    public static String choose_model(char[] S) {
+        
+        double ct = 0;
+        int l = S.length;
+        for (char c: S) {
+            if (c == 'C' || c == 'G') {
+                ct++;
+            }
+        }
+        double fracGC = ct / S.length;
+        
+        String nnm = "all97";
+        if (l > 20 && fracGC > 0.7) {
+            nnm = "tan04";
+        }
+        if (l < 16 && fracGC > 0.5) {
+            nnm = "tan04";
+        }
+        if (fracGC <= 0.4) {
+            nnm = "sug96";
+        }
+        if (16 < l && l < 20 && fracGC > 0.6) {
+            nnm = "san04";
+        }
+
+
+        return nnm;
+    }
     public static void main(String[] args) throws Exception {
-        String s1 = "CCCCCCCCCCCC".toUpperCase();  
-        String s2 = "CCCCCCCCCCCC".toUpperCase();
+
+        // String[] test_inputs = {"TAATACGACTCACTATAGGG", "CAATTAACCCTCACTAAAGG", 
+        //                         "GTAAAACGACGGCCAGTG", "TACGATTTAGGTGACACTATAG", "CTCGAGGTCGACGGTATCG",
+        //                         "GGTGGCGACGACTCCTGGAGCCCG", "GTATCACGAGGCCCTT", "GATAAGCTGTCAAAC",
+        //                         "AACGACGAGCGTGAC"};
+        
+        // for (String s : test_inputs) {
+
+        
+        String s1 = "AACGACGAGCGTGAC".toUpperCase();  
+        String s2 = "AACGACGAGCGTGAC".toUpperCase();
         
         // input dependent: if spaces appear in the sequence we should replace them with hyphens ("-")
         // s1 = s1.replaceAll("\\s", "-");
         // s2 = s2.replaceAll("\\s", "-");
-        
-        Sequence seq1 = new Sequence(s1);
-        Sequence seq2 = new Sequence(s2);
-
-        Alignment alignment = SmithWatermanGotoh.align(seq1, seq2, MatrixLoader.load("EDNAFULL_1"), 10f, 0.5f);
-        
-        char[] S1 = alignment.getSequence1();
-        char[] S2 = alignment.getSequence2();
-
-        // // comment out below when you can figure out the jaligner stuff:
-        // char[] S1 = s1.toCharArray(); 
-        // char[] S2 = s2.toCharArray();
-        
-        // Complement S2 because that's what MELTING likes:
-        S2 = complement(S2);
-
-        // Print what the alignments actually look like:
-        System.out.println(S1);
-        System.out.println(S2);
-        
+      
         TmCalculator tmCalculator = new TmCalculator();
         tmCalculator.initiate();
-        double result = tmCalculator.run(S1, S2);
+        double result = tmCalculator.run(s1.toCharArray(), s2.toCharArray());
         System.out.println(result);
-        
+       
+        //}
+
+
+
     }
 }
 
