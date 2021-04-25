@@ -96,7 +96,7 @@ public class TmCalculator {
         }
 
 
-        // We may error if the 
+        // We may error;
         if (Tm_str.length() == 0){
             System.out.println("Encountered fatal error!!");
             return 0.0;
@@ -173,6 +173,7 @@ public class TmCalculator {
 
         return nnm;
     }
+    
     public static void main(String[] args) throws Exception {
 
         // String[] test_inputs = {"TAATACGACTCACTATAGGG", "CAATTAACCCTCACTAAAGG", 
@@ -183,10 +184,10 @@ public class TmCalculator {
         // for (String s : test_inputs) {
 
         
-        String s1 = "AACGACGAGCGTGAC".toUpperCase();  
-        String s2 = "AACGACGAGCGTGAC".toUpperCase();
+        String s1 = "AACGAGAGCGTCGCAATTGTACGAC".toUpperCase();  
+        String s2 = "AACGACGAGCGTCCAATTGTTCGAC".toUpperCase();
         
-        // input dependent: if spaces appear in the sequence we should replace them with hyphens ("-")
+        // input dependent: if   spaces appear in the sequence we should replace them with hyphens ("-")
         // s1 = s1.replaceAll("\\s", "-");
         // s2 = s2.replaceAll("\\s", "-");
       
