@@ -42,20 +42,16 @@ public class TmCalculator {
         // Complement S2 because that's what MELTING likes:
         S2 = complement(S2);
 
-        // Print what the alignments actually look like:
-        System.out.println(S1);
-        System.out.println(S2);
+        // // Print what the alignments actually look like:
+        // System.out.println(S1);
+        // System.out.println(S2);
 
         // We specify the location of the folder containing the MELTING5 jar.
         String path_to_melting_executable = "./MELTING5.2.0/executable/";
         
-        // String[] nnms = {"all97", "bre86", "san04", "san96", "sug96", "tan04"}; 
         double Tm = 0.0;
+        String nnm = choose_model(S1); // Parse input to decide which nearest-neighbor model we're using.
 
-        String nnm = choose_model(S1); 
-
-       // for (String nnm : nnms) {
-        
         // I was unable to determine how to run the melting5 jar as a library. 
         // As such I decided to take this approach which calls the jar file using a java process.
         String[] meltingArgs = {"java", "-jar", "melting5.jar",
@@ -83,7 +79,7 @@ public class TmCalculator {
         in.read(results, 0, results.length);        
         // System.out.println(new String(results));
         
-        // print out any errors from MELTING5; Not sure if this is necessary.
+        // Retrieve any errors from MELTING5; Not sure if this is necessary.
         byte c[]=new byte[err.available()];
         err.read(c,0,c.length);
         // System.out.println(new String(c));
@@ -92,9 +88,7 @@ public class TmCalculator {
         String Tm_str = new String(Arrays.copyOfRange(results,  results.length-22, results.length-13));
         while ( !(Character.isDigit(Tm_str.charAt(0)) || (Tm_str.charAt(0) == '-')) ) {
             Tm_str = Tm_str.substring(1, Tm_str.length());
-          
         }
-
 
         // We may error;
         if (Tm_str.length() == 0){
@@ -104,15 +98,6 @@ public class TmCalculator {
 
         // Return as double the melting temperature.
         Tm = Double.parseDouble(Tm_str);
-        
-        System.out.println(nnm);
-        System.out.println(Tm);
-
-    // }
-
-
-
-
         return Tm;
     }
 
@@ -144,7 +129,9 @@ public class TmCalculator {
         return S_comp;
     }
 
-    /** From the char[] sequence, choose which nearest-neighbor model to use:  */
+    /** From the char[] sequence, choose which nearest-neighbor model to use:  
+     * Returned model must be from list: {"all97", "bre86", "san04", "san96", "sug96", "tan04"}
+    */
     public static String choose_model(char[] S) {
         
         double ct = 0;
@@ -175,106 +162,14 @@ public class TmCalculator {
     }
     
     public static void main(String[] args) throws Exception {
-
-        // String[] test_inputs = {"TAATACGACTCACTATAGGG", "CAATTAACCCTCACTAAAGG", 
-        //                         "GTAAAACGACGGCCAGTG", "TACGATTTAGGTGACACTATAG", "CTCGAGGTCGACGGTATCG",
-        //                         "GGTGGCGACGACTCCTGGAGCCCG", "GTATCACGAGGCCCTT", "GATAAGCTGTCAAAC",
-        //                         "AACGACGAGCGTGAC"};
-        
-        // for (String s : test_inputs) {
-
         
         String s1 = "AACGAGAGCGTCGCAATTGTACGAC".toUpperCase();  
-        String s2 = "AACGACGAGCGTCCAATTGTTCGAC".toUpperCase();
+        String s2 = "AACGACGAGCGTCCAATGTTCGAC".toUpperCase();
         
-        // input dependent: if   spaces appear in the sequence we should replace them with hyphens ("-")
-        // s1 = s1.replaceAll("\\s", "-");
-        // s2 = s2.replaceAll("\\s", "-");
-      
         TmCalculator tmCalculator = new TmCalculator();
         tmCalculator.initiate();
         double result = tmCalculator.run(s1.toCharArray(), s2.toCharArray());
         System.out.println(result);
-       
-        //}
-
-
 
     }
 }
-
-
-
-
-// // OLD VER:
-
-// /**
-//  *
-//  * @author yishe
-//  */
-// public class TmCalculator {
-
-
-//     private double Adjustment = 60.0; 
-    
-//     public void initiate() throws Exception {
-    
-//     }
-    
-    
-//     public double run(char[] S1, char[] S2) {
-   
-    
-//     double percentGC = computesPercentGC(S1);
-//     double percentMismatching = computesPercentMismatching(S1, S2);
-//     double duplexLength = S1.length; 
-//     double NaConcentration = 0.1;
-    
-//     //double Tm = 81.5 + 16.6 * Math.log10(NaConcentration / (1.0 + 0.7 * NaConcentration)) + 0.41 * percentGC - 500.0 / duplexLength - percentMismatching;
-    
-//     double Tm = Adjustment + 0.41 * percentGC - 500.0 / duplexLength - percentMismatching;
-    
-//     return Tm;
-//     }
-    
-
-        
-//         /**
-// 	 * computes the percentage of GC base pairs in the duplex of NucleotidSequences.
-// 	 * @return double percentage of GC base pairs in the duplex.
-// 	 */
-// 	private double computesPercentGC(char[] S1){
-            
-// 		double numberGC = 0.0;
-		
-// 		for (int i = 0; i < S1.length;i++){
-//                     char Base = S1[i];
-// 			if (Base == 'G' || Base == 'C'){
-// 				numberGC++;
-// 			}
-// 		}
-		
-// 		return numberGC / (double)S1.length * 100.0;
-// 	}
-	
-// 	/**
-// 	 * Computes the percentage of mismatching base pairs in the duplex of NucleotidSequences.
-// 	 * @return double percentage of mismatching base pairs in the duplex
-// 	 */
-// 	private double computesPercentMismatching(char[] S1, char[] S2){
-// 		double numberMismatching = 0.0;
-	
-// 		for (int i = 0; i < S1.length;i++){
-// 			char Base1 = S1[i];
-//                         char Base2 = S2[i];
-// 			if (Base1 != Base2){
-// 				numberMismatching++;
-// 			}
-// 		}
-// 		return numberMismatching / (double)S1.length * 100.0;
-// 	}
-        
-    
-    
-// }    
-
